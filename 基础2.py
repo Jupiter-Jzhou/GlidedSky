@@ -50,9 +50,9 @@ def generator(page_start, page_end):
 
 
 def run_1():
-    page_start = 50
-    page_end = 200
-    processes = 5
+    page_start = 1
+    page_end = 10
+    processes = 2
     url_page_gen = generator(page_start, page_end)
     cookie = mycookie.load_cookie()
 
