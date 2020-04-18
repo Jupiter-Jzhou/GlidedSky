@@ -1,11 +1,6 @@
 import requests
 from lxml import etree
-import mycookie
-import procPool
-
-PAGE_START = 1
-PAGE_END = 100
-PROCESSES = 3
+from tools import procPool, mycookie
 
 url = "http://www.glidedsky.com/level/web/crawler-basic-2"
 referer = "http://www.glidedsky.com/level/web/crawler-basic-2"
@@ -21,15 +16,14 @@ def get_nums(url_page, special_kwargs):
     :param special_kwargs: 该目标函数的专属参数，这里为：cookie
     :return: num_pages: 结果，这里为：每页的数字列表
     """
-    num_pages = []
+
     headers.update(referer=referer)
     cookie = special_kwargs.get("cookie")
     with requests.Session() as sess:
         r = sess.get(url_page, headers=headers, cookies=cookie)
         tree = etree.HTML(r.text)
         nums = tree.xpath('//div[@class="row"]/div/text()')
-        nums = [int(i.strip()) for i in nums]
-        num_pages.extend(nums)
+        num_pages = [int(i.strip()) for i in nums]
 
     return num_pages
 
@@ -45,17 +39,25 @@ def generator(page_start, page_end):
 
 
 def run():
+    PAGE_START = 1
+    PAGE_END = 20
+    PROCESSES = 2
     cookie = mycookie.load_cookie()
     special_kwargs = {"cookie": cookie}
     gen_url_page = generator(PAGE_START, PAGE_END)
-    num, num_total = procPool.pool_console(get_nums, PROCESSES, gen_url_page, mode="mode1", **special_kwargs)
-    print("爬取网页数", num)
-    print("理应数字个数", num * 12)
-    print("得到数字个数", len(num_total))
-    total = 0
-    for i in num_total:
-        total += i
-    print("数字总和：", total)
+    counter, result = procPool.pool_console(get_nums, PROCESSES, gen_url_page, mode="mode1", **special_kwargs)
+
+    total = 0  # 数字个数
+    _sum = 0    # 数字综合
+    for ii in result:
+        for i in ii:
+            _sum += i
+            total += 1
+    print(type(result))
+    print("爬取网页数", counter)
+    print("理应数字个数", counter * 12)
+    print("得到数字个数", total)
+    print("数字总和：", _sum)
 
 
 if __name__ == '__main__':

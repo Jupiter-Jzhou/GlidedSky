@@ -1,7 +1,6 @@
 import requests
 from lxml import etree
-import mycookie
-
+from tools import mycookie
 
 url = "http://www.glidedsky.com/level/web/crawler-basic-1"
 referer = "http://www.glidedsky.com/level/crawler-basic-1"

@@ -1,8 +1,7 @@
 import requests
 from lxml import etree
-import mycookie
+from tools import mycookie
 from multiprocessing import Pool, Manager
-import os
 import comunits
 
 url = "http://www.glidedsky.com/level/web/crawler-basic-2"
