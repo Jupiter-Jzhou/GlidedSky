@@ -1,3 +1,7 @@
+#
+# 两进程，主进程同步请求，子进程解析
+#
+
 import requests
 import time
 import random

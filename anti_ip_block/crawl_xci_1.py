@@ -1,3 +1,7 @@
+#
+# 进程池同步请求 请求&解析在一个进程
+#
+
 import requests
 from lxml import etree
 from tools import procPool, dbRedis

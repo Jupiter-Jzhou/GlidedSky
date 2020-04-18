@@ -1,3 +1,7 @@
+#
+# 两进程，主进程异步请求，子进程解析
+#
+
 import asyncio
 import time
 from multiprocessing import Process, Queue
