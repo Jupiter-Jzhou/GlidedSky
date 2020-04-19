@@ -9,8 +9,8 @@ from multiprocessing import Process, Queue
 import concurrent.futures as exc
 from lxml import etree
 import aiohttp
-from tools import dbRedis, mycookie
-import crawl_kdl
+import dbRedis, mycookie
+
 
 headers = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                          "Chrome/80.0.3987.163 Safari/537.36 Edg/80.0.361.111"}
@@ -23,8 +23,8 @@ def generator(*, page=None):
     """主进程：（url,proxy）的生成器"""
 
     # 获取代理
-    zdb = dbRedis.RedisZSet()
-    proxy_list = zdb.get(mode="score", _min=0, _max=199)
+    zdb = dbRedis.RedisZSet("http")
+    proxy_list = zdb.get(mode="score", _min=10, _max=10)
     # 获取页码
     if page is None:
         page_need = get_page()
@@ -76,6 +76,7 @@ async def get_nums(page, ip, queue1, queue2):
         fail_page.append(page)
 
     except Exception as e:
+        print(type(e),e)
         queue2.put((ip, 5))
         fail_page.append(page)
 
@@ -84,7 +85,7 @@ async def get_nums(page, ip, queue1, queue2):
 
 def proc1_parser(queue1):
     """子进程1：用于解析网页，操作数据库保存有用数据，置分该有用代理"""
-    zdb = dbRedis.RedisZSet()
+    zdb = dbRedis.RedisZSet("http")
     hdb = dbRedis.RedisHash()
     while 1:
         text, page, ip = queue1.get()
@@ -99,7 +100,7 @@ def proc1_parser(queue1):
                 _sum = "+".join(numbers)
                 _sum = str(eval(_sum))
                 hdb.add(key=page, value=_sum)
-                zdb.add(ip, score=200)
+                zdb.update(ip, 200)
             except SyntaxError:
                 print("代理需登录 ", end="")
                 zdb.minus(ip, account=201)
@@ -110,7 +111,7 @@ def proc1_parser(queue1):
 
 def proc2_minus(queue2):
     """子进程2：用于操作数据库删除无用代理"""
-    zdb = dbRedis.RedisZSet()
+    zdb = dbRedis.RedisZSet("http")
     while 1:
         ip, account = queue2.get()
         if (ip, account) == (False,) * 2:
@@ -184,6 +185,6 @@ def run():
 
 
 if __name__ == '__main__':
-    mycookie.get_cookie()
+    # mycookie.get_cookie()
     cookie = mycookie.load_cookie()
     run()

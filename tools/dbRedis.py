@@ -100,20 +100,26 @@ class RedisZSet(object):
         self.MAX_SCORE = 100
 
     def add(self, proxy, score=None):
-        """添加元素"""
+        """添加元素和其分数
+        """
         if score is None:
             score = self.INITIAL_SCORE
-        maping = {proxy: score}
-        self.db.zadd(self.redis_key, maping)
-        print("代理:", proxy, " 分数:", score, "  添加")
 
-    def max(self, proxy, score=None):
-        """添加元素"""
-        if score is None:
-            score = self.MAX_SCORE
         maping = {proxy: score}
-        self.db.zadd(self.redis_key, maping)
-        print("代理:", proxy, " 分数:", score, "  置顶")
+        flag = self.db.zadd(self.redis_key, maping, nx=True)
+        if flag == 1:
+            print("代理:", proxy, " 分数:", score, "  添加")
+        elif flag == 0:
+            old_score = self.db.zscore(self.redis_key, proxy)
+            print("代理:", proxy, " 分数:", old_score, "  已存 ")
+
+    def update(self, proxy, score):
+        """更新元素的分数"""
+
+        maping = {proxy: score}
+        old_score = self.db.zscore(self.redis_key, proxy)
+        self.db.zadd(self.redis_key, maping, xx=True)
+        print("代理:", proxy, " 分数:", old_score, "=>", score, "  更新")
 
     def minus(self, proxy, account=1):
         """减分数"""
@@ -164,8 +170,11 @@ class RedisZSet(object):
 #     print(ldb.get())
 
 
-# db = RedisZSet()
-# ii = db.get()
+# db = RedisZSet("test")
+# db.add("a1")
+# db.add("a2", score=20)
+# db.add("a2", score=30)
+# # ii = db.get()
 # flag =0
 # for i in ii:
 #     flag += 1
