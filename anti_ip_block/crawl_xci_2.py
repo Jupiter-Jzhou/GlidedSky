@@ -4,6 +4,7 @@
 
 import asyncio
 import time
+import random
 from multiprocessing import Process, Queue
 import aiohttp
 from lxml import etree
@@ -22,13 +23,15 @@ async def crawler(page):
     """
     fail_page = []
     url_page = url + f"/{page}"
-    conn = aiohttp.TCPConnector(limit=5)
+    print(url_page)
+    conn = aiohttp.TCPConnector(limit=3)
     try:
         async with aiohttp.ClientSession(connector=conn) as session:
             async with session.get(url_page, timeout=22, headers=headers) as resp:
                 if resp.status == 200:
                     text = await resp.read()
                     queue1.put(text)
+                    await asyncio.sleep(random.randint(1, 2))
                 else:
                     print(resp.status)
                     fail_page.append(page)

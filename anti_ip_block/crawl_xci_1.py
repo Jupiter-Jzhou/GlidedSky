@@ -23,7 +23,6 @@ def crawler(url_page):
     with requests.Session() as sess:
         print(url_page)
         r = sess.get(url_page, headers=headers)
-        print(r.text)
     tree = etree.HTML(r.text)
     trs = tree.xpath('//table[@id="ip_list"]//tr')
     print(etree.tostring(trs))
@@ -65,13 +64,4 @@ def run():
 if __name__ == '__main__':
 
     run()
-
-    # with open("ipo.txt", "r", encoding="utf-8") as f:
-    #     ips = f.readlines()
-    # # ips = (i.split("@")[0].strip() for i in ips)
-    # ips = [i.split("@")[0].strip() for i in ips]
-    # print(ips)
-    # db = dbRedis.RedisZSet()
-    # for i in ips:
-    #     db.add(i)
 

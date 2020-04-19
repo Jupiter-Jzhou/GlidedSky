@@ -67,14 +67,15 @@ def make_url(page):
     return url_page, referer
 
 
-def run(queue1):
-    PAGE_START = 201
-    PAGE_END = 600
+def main(queue1):
+    """主进程：专注同步请求"""
+    PAGE_START = 1
+    PAGE_END = 1000
     with requests.Session() as sess:  # 这样才能共享每次请求的cookie
         for page in range(PAGE_START, PAGE_END + 1):
             url_page, referer = make_url(page)
             while 1:
-                time.sleep(random.randint(1, 3))
+                time.sleep(random.randint(1, 2))
                 page_failed = crawler(sess, url_page, referer, queue1)
                 if not page_failed:
                     print("正常结束: ", page)
@@ -83,7 +84,8 @@ def run(queue1):
     queue1.put(False)  # 结束标志
 
 
-def main():
+def run():
+    """进程控制器：1主1子"""
     queue1 = Queue()
     proc1 = Process(target=parser, args=(queue1,))
     zdb = dbRedis.RedisZSet()
@@ -92,7 +94,7 @@ def main():
     t11 = time.perf_counter()
 
     proc1.start()
-    run(queue1)
+    main(queue1)
     proc1.join()
 
     t12 = time.perf_counter()
@@ -103,4 +105,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    run()

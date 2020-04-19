@@ -58,9 +58,11 @@ def run():
 if __name__ == '__main__':
     run()
 
-    # with open("ipo.txt", "r") as f:
+    # with open("ipo.txt", "r", encoding="utf-8") as f:
     #     ips = f.readlines()
-    # ips = (i.strip() for i in ips)
+    # # ips = (i.split("@")[0].strip() for i in ips)
+    # ips = [i.split("@")[0].strip() for i in ips]
+    # print(ips)
     # db = dbRedis.RedisZSet()
     # for i in ips:
     #     db.add(i)
