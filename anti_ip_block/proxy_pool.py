@@ -25,9 +25,9 @@ url_nn = "https://www.xicidaili.com/nn"  # 国内高匿页
 url_kdl = "https://www.kuaidaili.com"
 
 
-def gen_pages_kdl(start, end):
+def gen_pages_kdl(page_need):
     """制作每页的url 和 referer"""
-    for page in range(start, end + 1):
+    for page in page_need:
         if page == 1:
             url_page = url_kdl + "/free/"
             referer = url_kdl
@@ -41,9 +41,9 @@ def gen_pages_kdl(start, end):
         yield url_page, referer
 
 
-def gen_pages_xci(start, end):
+def gen_pages_xci(page_need):
 
-    for page in range(start, end + 1):
+    for page in page_need:
         if page == 1:
             url_page = url_nn
             referer = url_home
@@ -83,7 +83,7 @@ def parser_xci(queue1):
     while 1:
         text = queue1.get()             # 空则一直阻塞
         if text is False:
-            print("解析任务已完成")
+            print("获取代理任务已完成: 西刺代理")
             break
         tree = etree.HTML(text)
         trs = tree.xpath('//table[@id="ip_list"]//tr')
@@ -133,12 +133,12 @@ async def async_crawler(page, queue1):
     return page_failed
 
 
-async def async_main(crawl_web, page_need, queue1):
+async def async_main(crawl_web, page_gen, queue1):
     """"""
     flag = 0
     while 1:
         flag += 1
-        tasks = [asyncio.create_task(async_crawler(page, queue1)) for page in page_need]
+        tasks = [asyncio.create_task(async_crawler(page, queue1)) for page in page_gen]
         pages_failed = await asyncio.gather(*tasks)
         # pages_failed = [await t for t in tasks]   #  等效上一句
 
@@ -148,8 +148,8 @@ async def async_main(crawl_web, page_need, queue1):
         elif flag == 3:
             break
         else:
-            page_need = [i for i in pages_failed if i is not None]
-            print(page_need)
+            page_gen = [i for i in pages_failed if i is not None]
+            print(page_gen)
             print(f"{crawl_web} 第{flag+1}轮异步请求 启动")
 
     return pages_failed  # 异步请求等所有完成后才返回所有任务的结果列表
@@ -176,16 +176,14 @@ def crawler(sess, url_page, referer, queue1):
     return page_failed
 
 
-def main(crawl_web, page_need, queue1):
+def main(crawl_web, page_gen, queue1):
 
     with requests.Session() as sess:  # 这样才能共享每次请求的cookie
-        for url_page, referer in page_need:
-
+        pages_failed = []  # 用于装 失败三次后的页面
+        for url_page, referer in page_gen:
             flag = 0  # 某页失败3次后，记录该页，不再重新请求
-            pages_failed = []   # 用于装 失败三次后的页面
             while 1:
                 flag += 1
-                time.sleep(random.randint(1, 2))
                 page_failed = crawler(sess, url_page, referer, queue1)
                 if page_failed is None:
                     break
@@ -195,30 +193,32 @@ def main(crawl_web, page_need, queue1):
                 else:
                     print(f"{crawl_web} 重试: ", url_page)
                     url_page, referer = page_failed
+                    time.sleep(random.randint(1, 2))  # 纯请求时间 0.5s左右
             time.sleep(random.randint(1, 2))    # 纯请求时间 0.5s左右
 
-    return pages_failed
+        return pages_failed
 
 
-def run(crawl_web, mode=None, page_start=101, page_end=102):
+def run(crawl_web, page_need, mode=None):
     """进程控制器：1主1子
-    :param mode: None: 同步请求
-                 async: 异步请求
     :param crawl_web: 不同代理网站 用于选择 动态请求参数（u:url_page r:referer p:proxy）的生成器 和 网页解析器
                         "xci": 西刺代理
                         "kdl": 快代理
+    :param page_need: 需要爬取的页码的列表或生成器
+    :param mode: None: 同步请求
+                 async: 异步请求
     """
 
     queue1 = Queue()
 
     if crawl_web == "xci":
-        page_need = gen_pages_xci(page_start, page_end)
+        page_gen = gen_pages_xci(page_need)
         proc1 = Process(target=parser_xci, args=(queue1,))
     elif crawl_web == "kdl":
-        page_need = gen_pages_kdl(page_start, page_end)
+        page_gen = gen_pages_kdl(page_need)
         proc1 = Process(target=parser_kdl, args=(queue1,))
     else:
-        page_need = proc1 = None
+        page_gen = proc1 = None
         exit("请正确输入代理网站编号")
 
     zdb_http = dbRedis.RedisZSet("http")
@@ -231,9 +231,9 @@ def run(crawl_web, mode=None, page_start=101, page_end=102):
     proc1.start()
 
     if mode == "async":
-        pages_failed = asyncio.run(async_main(crawl_web, page_need, queue1))
+        pages_failed = asyncio.run(async_main(crawl_web, page_gen, queue1))
     else:
-        pages_failed = main(crawl_web, page_need, queue1)
+        pages_failed = main(crawl_web, page_gen, queue1)
 
     queue1.put(False)  # 结束解析子进程的标志
 
@@ -248,8 +248,10 @@ def run(crawl_web, mode=None, page_start=101, page_end=102):
     print(f"{crawl_web}: 爬取时长:", t12 - t11)
 
 
-# if __name__ == '__main__':
-#     # run("xci",mode="async")
-#     run("kdl",mode="async")
+if __name__ == '__main__':
+    page_need = (i for i in range(4, 5))
+    # run("xci", 3, 3, mode="async")
+    # run("kdl", page_need)
+    run("xci", page_need)
 
 
