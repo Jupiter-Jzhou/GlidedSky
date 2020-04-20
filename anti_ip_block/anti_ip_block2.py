@@ -67,17 +67,21 @@ async def get_nums(page, ip, queue1, queue2):
                 if resp.status == 200:
                     text = await resp.read()
                     queue1.put((text, page, ip))
-                else:
-                    queue2.put((ip, 201))
+                elif resp.status == 403:
+                    print("该代理已用过")
+                    queue2.put((ip, 200))   # 403被封IP，表示该IP可用
                     fail_page.append(page)
+                else:
+                    print(resp.status)
+                    queue2.put((ip, 4))     # 给三次机会
 
     except (ex.ServerConnectionError, ex.ClientOSError, ex.ClientHttpProxyError, exc.TimeoutError) as e:
-        queue2.put((ip, 201))
+        queue2.put((ip, 0))            # 直接移除
         fail_page.append(page)
 
     except Exception as e:
         print(type(e),e)
-        queue2.put((ip, 5))
+        queue2.put((ip, 5))           # 给两次机会
         fail_page.append(page)
 
     return fail_page
@@ -106,7 +110,7 @@ def proc1_parser(queue1):
                 zdb.minus(ip, account=201)
             except Exception as e:
                 print(ip, "状态200", type(e), e)
-                print(text)
+                zdb.update(ip, 403)
 
 
 def proc2_minus(queue2):
@@ -117,6 +121,8 @@ def proc2_minus(queue2):
         if (ip, account) == (False,) * 2:
             print("删除任务已完成")
             break
+        elif account == 200:
+            zdb.update(ip,account)
         else:
             zdb.minus(ip, account=account)
 
@@ -185,6 +191,6 @@ def run():
 
 
 if __name__ == '__main__':
-    # mycookie.get_cookie()
+    mycookie.get_cookie()
     cookie = mycookie.load_cookie()
     run()

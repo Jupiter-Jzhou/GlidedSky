@@ -200,7 +200,7 @@ def main(crawl_web, page_need, queue1):
     return pages_failed
 
 
-def run(crawl_web, mode=None):
+def run(crawl_web, mode=None, page_start=101, page_end=102):
     """进程控制器：1主1子
     :param mode: None: 同步请求
                  async: 异步请求
@@ -209,15 +209,13 @@ def run(crawl_web, mode=None):
                         "kdl": 快代理
     """
 
-    PAGE_START = 3
-    PAGE_END = 4
     queue1 = Queue()
 
     if crawl_web == "xci":
-        page_need = gen_pages_xci(PAGE_START, PAGE_END)
+        page_need = gen_pages_xci(page_start, page_end)
         proc1 = Process(target=parser_xci, args=(queue1,))
     elif crawl_web == "kdl":
-        page_need = gen_pages_kdl(PAGE_START, PAGE_END)
+        page_need = gen_pages_kdl(page_start, page_end)
         proc1 = Process(target=parser_kdl, args=(queue1,))
     else:
         page_need = proc1 = None
@@ -250,8 +248,8 @@ def run(crawl_web, mode=None):
     print(f"{crawl_web}: 爬取时长:", t12 - t11)
 
 
-if __name__ == '__main__':
-    # run("xci",mode="async")
-    run("kdl",mode="async")
+# if __name__ == '__main__':
+#     # run("xci",mode="async")
+#     run("kdl",mode="async")
 
 

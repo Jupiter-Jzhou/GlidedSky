@@ -31,7 +31,7 @@ def crawler():
 
 
 def parser(html):
-    zdb = dbRedis.RedisZSet()
+    zdb = dbRedis.RedisZSet("http")
     tree = etree.HTML(html)
     div = tree.xpath('//div[@class="fly-panel"]/div/text()')
     for i in div:

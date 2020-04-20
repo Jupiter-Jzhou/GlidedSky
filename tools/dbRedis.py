@@ -92,7 +92,7 @@ class RedisHash(object):
 class RedisZSet(object):
     """有序集合"""
 
-    def __init__(self, redis_key="proxies"):
+    def __init__(self, redis_key="http"):
         self.db = redis.StrictRedis(decode_responses=True)
         self.redis_key = redis_key
         self.INITIAL_SCORE = 10
@@ -122,14 +122,19 @@ class RedisZSet(object):
         print("代理:", proxy, " 分数:", old_score, "=>", score, "  更新")
 
     def minus(self, proxy, account=1):
-        """减分数"""
+        """减分数
+        account = 0 表示移除
+        """
         score = self.db.zscore(self.redis_key, proxy)
-        if int(score) - account >= self.MIN_SCORE:
-            score = self.db.zincrby(self.redis_key, -account, proxy)
-            print("代理:", proxy, " 分数:", score, "  减", str(account))
+        if account == 0:
+            self.db.zrem(self.redis_key, proxy)
+            print("代理:", proxy, " 分数:", score, "=> 0", " 移除")
+        elif int(score) - account > self.MIN_SCORE:
+            new_score = self.db.zincrby(self.redis_key, -account, proxy)
+            print("代理:", proxy, " 分数:", score, "=>", new_score, "  减", str(account))
         else:
             self.db.zrem(self.redis_key, proxy)
-            print("代理:", proxy, " 分数:", score, "  移除")
+            print("代理:", proxy, " 分数:", score, "=> 0", " 移除")
 
     def plus(self, proxy, account=1):
         """加分数"""
