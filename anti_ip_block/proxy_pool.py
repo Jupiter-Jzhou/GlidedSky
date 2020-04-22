@@ -20,6 +20,24 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:73.0) Gec
 proxy_local = "http://127.0.0.1:25379"
 
 
+def gen_pages_yun(page_need):
+    url_home = "http://www.ip3366.net"
+    url_free = "http://www.ip3366.net/free"
+
+    for page in page_need:
+        if page == 1:
+            url_page = url_free
+            referer = url_home
+        elif page == 2:
+            url_page = url_free + f"/?stype=1&page={page}"
+            referer = url_free
+        else:
+            url_page = url_free + f"/?stype=1&page={page}"
+            referer = url_free + f"/?stype=1&page={page-1}"
+
+        yield url_page, referer
+
+
 def gen_pages_nma(page_need):
     url_http = "http://www.nimadaili.com/http"
     url_home = "http://www.nimadaili.com"
@@ -72,9 +90,28 @@ def gen_pages_xci(page_need):
         yield url_page, referer
 
 
+def parser_yun(queue1):
+    zdb_http = dbRedis.RedisZSet("http")
+    # flag = 0
+    while 1:
+        text = queue1.get()
+        if text is False:
+            print("获取代理任务已完成: 快代理")
+            break
+        tree = etree.HTML(text)
+        trs = tree.xpath('//tbody/tr')
+        for tr in trs:
+            ip = tr.xpath('./td')[0].xpath('./text()')[0]
+            port = tr.xpath('./td')[1].xpath('./text()')[0]
+            proxy = ":".join([ip, port])
+            zdb_http.add(proxy)  # 相同的会覆盖
+            # flag += 1
+            # print(flag, proxy)
+
+
 def parser_nma(queue1):
     zdb_http = dbRedis.RedisZSet("http")
-    flag = 0
+    # flag = 0
     while 1:
         text = queue1.get()
         if text is False:
@@ -85,8 +122,8 @@ def parser_nma(queue1):
         for tr in trs:
             proxy = tr.xpath('./td')[0].xpath('./text()')[0]
             zdb_http.add(proxy)            # 相同的会覆盖
-            flag += 1
-            print(flag, proxy)
+            # flag += 1
+            # print(flag, proxy)
 
 
 def parser_kdl(queue1):
@@ -252,6 +289,9 @@ def run(crawl_web, page_need, mode=None):
     elif crawl_web == "nma":
         page_gen = gen_pages_nma(page_need)
         proc1 = Process(target=parser_nma, args=(queue1,))
+    elif crawl_web == "yun":
+        page_gen = gen_pages_yun(page_need)
+        proc1 = Process(target=parser_yun, args=(queue1,))
     else:
         page_gen = proc1 = None
         exit("请正确输入代理网站编号")
@@ -284,10 +324,11 @@ def run(crawl_web, page_need, mode=None):
 
 
 if __name__ == '__main__':
-    page_need = (i for i in range(6, 20))
+    page_need = (i for i in range(1, 8))
     # run("xci", 3, 3, mode="async")
     # run("kdl", page_need)
     # run("xci", page_need)
-    run("nma", page_need)
+    # run("nma", page_need)
+    run("yun", page_need)
 
 
