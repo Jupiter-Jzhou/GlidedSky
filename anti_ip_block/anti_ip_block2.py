@@ -25,13 +25,12 @@ def generator(*, page=None):
 
     # 获取代理
     zdb = dbRedis.RedisZSet("http")
-    proxy_list = zdb.get(mode="score", _min=10, _max=10)
+    proxy_list = zdb.get(mode="score", _min=0, _max=500)
     # 获取页码
     if page is None:
         page_need = get_page()
     else:
         page_need = page
-
     return zip(page_need, proxy_list)
 
 
@@ -41,16 +40,10 @@ def get_page():
     page_down = hdb.get(mode="ks")
     if page_down:
         page_down = [int(i) for i in page_down]
-        page_down.sort()
-        page_down_max = page_down[-1]
-        page_down_min = page_down[0]
-        page_con = [i for i in range(page_down_max + 1, 1001)]
         page_need = []
-        for i in range(page_down_min, page_down_max + 1):
+        for i in range(1, 1001):
             if i not in page_down:
                 page_need.append(i)
-        page_need.extend(page_con)
-        page_need.sort()
     else:
         page_need = (i for i in range(1, 1001))
     return page_need
