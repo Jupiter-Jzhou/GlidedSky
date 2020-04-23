@@ -21,6 +21,23 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:73.0) Gec
 proxy_local = "http://127.0.0.1:25379"
 
 
+def gen_pages_xla(page_need):
+    url_home = "http://www.xiladaili.com/"
+    url_gaoni = "http://www.xiladaili.com/gaoni/"   # 含https
+    for page in page_need:
+        if page == 1:
+            url_page = url_gaoni
+            referer = url_home
+        elif page == 2:
+            url_page = url_gaoni + f"{page}/"
+            referer = url_gaoni
+        else:
+            url_page = url_gaoni + f"{page}/"
+            referer = url_gaoni + f"{page-1}/"
+
+        yield url_page, referer
+
+
 def gen_pages_66ip(page_need):
     url_home = "http://www.66ip.cn"
     for page in page_need:
@@ -107,6 +124,23 @@ def gen_pages_xci(page_need):
         yield url_page, referer
 
 
+def parser_xla(queue1):
+    zdb_http = dbRedis.RedisZSet("http")
+    # flag = 0
+    while 1:
+        text = queue1.get()
+        if text is False:
+            print("获取代理任务已完成: 西拉代理")
+            break
+        tree = etree.HTML(text)
+        trs = tree.xpath('//tbody/tr')
+        for tr in trs:
+            proxy = tr.xpath('./td')[0].xpath('./text()')[0]
+            zdb_http.add(proxy)            # 仅新
+            # flag += 1
+            # print(flag, proxy)
+
+
 def parser_66ip(queue1):
     zdb_http = dbRedis.RedisZSet("http")
     # flag = 0
@@ -157,7 +191,7 @@ def parser_nma(queue1):
         trs = tree.xpath('//tbody/tr')
         for tr in trs:
             proxy = tr.xpath('./td')[0].xpath('./text()')[0]
-            zdb_http.add(proxy)            # 相同的会覆盖
+            zdb_http.add(proxy)            # 仅新
             # flag += 1
             # print(flag, proxy)
 
@@ -177,7 +211,7 @@ def parser_kdl(queue1):
             ip = tr.xpath('./td[@data-title="IP"]/text()')[0]
             port = tr.xpath('./td[@data-title="PORT"]/text()')[0]
             proxy = ":".join([ip, port])
-            zdb_http.add(proxy)            # 相同的会覆盖
+            zdb_http.add(proxy)            # 仅新
 
 
 def parser_xci(queue1):
@@ -331,6 +365,9 @@ def run(crawl_web, page_need, mode=None):
     elif crawl_web == "66ip":
         page_gen = gen_pages_66ip(page_need)
         proc1 = Process(target=parser_66ip, args=(queue1,))
+    elif crawl_web == "xla":
+        page_gen = gen_pages_xla(page_need)
+        proc1 = Process(target=parser_xla, args=(queue1,))
     else:
         page_gen = proc1 = None
         exit("请正确输入代理网站编号")
@@ -363,12 +400,13 @@ def run(crawl_web, page_need, mode=None):
 
 
 if __name__ == '__main__':
-    page_need = (i for i in range(8, 101))
+    page_need = (i for i in range(1, 101))
 #     # run("xci", 3, 3, mode="async")
 #     # run("kdl", page_need)
 #     # run("xci", page_need)
 #     # run("nma", page_need)
 #     # run("yun", page_need)
-    run("66ip", page_need)
+#     run("66ip", page_need)
+    run("xla", page_need)
 
 
