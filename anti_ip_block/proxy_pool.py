@@ -1,6 +1,7 @@
 #
 # 两进程，主进程可同步也可异步请求(mode来选择，默认同步)，子进程解析
-# 可选择多个代理网站（crawl_web来选择），目前有西刺、快代理
+# 可选择多个代理网站（crawl_web来选择），
+# 目前有西刺、快代理、云代理（仅同步）、尼玛代理（仅同步）、66代理（resp.encoding = "gb2312"）
 #
 
 import asyncio
@@ -16,8 +17,24 @@ import requests
 import dbRedis
 
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:73.0) Gecko/20100101 Firefox/73.0',
-           "Accept-Encoding": "gzip, deflate, br"}
+           "Accept-Encoding": "gzip, deflate"}
 proxy_local = "http://127.0.0.1:25379"
+
+
+def gen_pages_66ip(page_need):
+    url_home = "http://www.66ip.cn"
+    for page in page_need:
+        if page == 1:
+            url_page = url_home
+            referer = url_home
+        elif page == 2:
+            url_page = url_home + f"/{page}.html"
+            referer = url_home
+        else:
+            url_page = url_home + f"/{page}.html"
+            referer = url_home + f"/{page-1}.html"
+
+        yield url_page, referer
 
 
 def gen_pages_yun(page_need):
@@ -90,13 +107,32 @@ def gen_pages_xci(page_need):
         yield url_page, referer
 
 
+def parser_66ip(queue1):
+    zdb_http = dbRedis.RedisZSet("http")
+    # flag = 0
+    while 1:
+        text = queue1.get()
+        if text is False:
+            print("获取代理任务已完成: 66代理")
+            break
+        tree = etree.HTML(text)
+        trs = tree.xpath('//div[@id="main"]//table/tr')
+        for tr in trs[1:]:
+            ip = tr.xpath('./td')[0].xpath('./text()')[0]
+            port = tr.xpath('./td')[1].xpath('./text()')[0]
+            proxy = ":".join([ip, port])
+            zdb_http.add(proxy)  # 只添加新的
+            # flag += 1
+            # print(flag, proxy)
+
+
 def parser_yun(queue1):
     zdb_http = dbRedis.RedisZSet("http")
     # flag = 0
     while 1:
         text = queue1.get()
         if text is False:
-            print("获取代理任务已完成: 快代理")
+            print("获取代理任务已完成: 云代理")
             break
         tree = etree.HTML(text)
         trs = tree.xpath('//tbody/tr')
@@ -292,6 +328,9 @@ def run(crawl_web, page_need, mode=None):
     elif crawl_web == "yun":
         page_gen = gen_pages_yun(page_need)
         proc1 = Process(target=parser_yun, args=(queue1,))
+    elif crawl_web == "66ip":
+        page_gen = gen_pages_66ip(page_need)
+        proc1 = Process(target=parser_66ip, args=(queue1,))
     else:
         page_gen = proc1 = None
         exit("请正确输入代理网站编号")
@@ -324,11 +363,12 @@ def run(crawl_web, page_need, mode=None):
 
 
 if __name__ == '__main__':
-    page_need = (i for i in range(1, 8))
-    # run("xci", 3, 3, mode="async")
-    # run("kdl", page_need)
-    # run("xci", page_need)
-    # run("nma", page_need)
-    run("yun", page_need)
+    page_need = (i for i in range(8, 101))
+#     # run("xci", 3, 3, mode="async")
+#     # run("kdl", page_need)
+#     # run("xci", page_need)
+#     # run("nma", page_need)
+#     # run("yun", page_need)
+    run("66ip", page_need)
 
 
