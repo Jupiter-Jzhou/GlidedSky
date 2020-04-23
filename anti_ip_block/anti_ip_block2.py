@@ -5,7 +5,8 @@
 import asyncio
 import aiohttp.client_exceptions as ex
 import time
-from multiprocessing import Process, Queue
+import os
+from multiprocessing import Process, Queue, freeze_support
 import concurrent.futures as exc
 from lxml import etree
 import aiohttp
@@ -191,6 +192,8 @@ def run():
 
 
 if __name__ == '__main__':
+    freeze_support()
     mycookie.get_cookie()
     cookie = mycookie.load_cookie()
     run()
+    os.system("pause")
