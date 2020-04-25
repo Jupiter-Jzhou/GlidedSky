@@ -9,15 +9,15 @@ import os
 from multiprocessing import Process, Queue, freeze_support
 import concurrent.futures as exc
 from lxml import etree
-import aiohttp
+import aiohttp, requests
 import dbRedis, mycookie
 
 
 headers = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                          "Chrome/80.0.3987.163 Safari/537.36 Edg/80.0.361.111"}
 
-url = "http://www.glidedsky.com/level/web/crawler-ip-block-2"
-url_base2 = "http://www.glidedsky.com/level/web/crawler-basic-2"
+url = "http://glidedsky.com/level/web/crawler-ip-block-2"
+url_base2 = "http://glidedsky.com/level/web/crawler-basic-2"
 
 
 def generator(*, page=None):

@@ -47,19 +47,11 @@ def crawler():
 if __name__ == '__main__':
     # crawler()
 
-    # with open("ihuan.txt", "r") as f:
-    #     proxies = f.readlines()
-    # proxies = (i.strip() for i in proxies)
-    # db = dbRedis.RedisZSet()
-    # for i in proxies:
-    #     db.add(i)
-
-
-    with open("ihuan.txt", "r", encoding="utf-8") as f:
-        ips = f.readlines()
-    # ips = (i.split("@")[0].strip() for i in ips)
-    ips = [i.split("@")[0].strip() for i in ips]
-    print(ips)
+    with open("ihuan.txt", "r") as f:
+        proxies = f.readlines()
+    proxies = (i.strip() for i in proxies)
     db = dbRedis.RedisZSet()
-    for i in ips:
+    for i in proxies:
         db.add(i)
+
+

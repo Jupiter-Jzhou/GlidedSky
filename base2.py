@@ -4,8 +4,8 @@ from tools import mycookie
 from multiprocessing import Pool, Manager
 import comunits
 
-url = "http://www.glidedsky.com/level/web/crawler-basic-2"
-referer = "http://www.glidedsky.com/level/web/crawler-basic-2"
+url = "http://glidedsky.com/level/web/crawler-basic-2"
+referer = "http://glidedsky.com/level/web/crawler-basic-2"
 headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/80.0.3987.163 Safari/537.36 Edg/80.0.361.111"
